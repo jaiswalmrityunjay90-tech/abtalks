@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
 const rewards = [
   {
@@ -39,48 +40,14 @@ const rewards = [
   },
 ];
 
-function getUserData() {
-  const saved = localStorage.getItem("abtalks-user");
-
-  if (saved) {
-    return JSON.parse(saved);
-  }
-
-  return {
-    xp: 0,
-    coins: 0,
-    unlockedRewards: [],
-  };
-}
-
 function RewardShop() {
-  const [user, setUser] = useState(getUserData());
+  const { user, buyReward } = useUser();
+  const [toastMessage, setToastMessage] = useState("");
 
-  const buyReward = (reward) => {
-    if (user.unlockedRewards?.includes(reward.id)) {
-      return;
-    }
-
-    if (user.coins < reward.cost) {
-      alert("Not enough AB Coins! 🪙");
-      return;
-    }
-
-    const updatedUser = {
-      ...user,
-      coins: user.coins - reward.cost,
-      unlockedRewards: [
-        ...(user.unlockedRewards || []),
-        reward.id,
-      ],
-    };
-
-    setUser(updatedUser);
-
-    localStorage.setItem(
-      "abtalks-user",
-      JSON.stringify(updatedUser)
-    );
+  const handleBuy = (reward) => {
+    const res = buyReward(reward);
+    setToastMessage(res.message);
+    setTimeout(() => setToastMessage(""), 3500);
   };
 
   return (
@@ -106,6 +73,20 @@ function RewardShop() {
           ← Back to dashboard
         </Link>
 
+        {toastMessage && (
+          <div className="reward-toast-alert" style={{
+            margin: "15px 0",
+            padding: "14px 20px",
+            background: "rgba(139, 92, 246, 0.15)",
+            border: "1px solid var(--purple)",
+            borderRadius: "10px",
+            color: "#fff",
+            fontWeight: "600"
+          }}>
+            {toastMessage}
+          </div>
+        )}
+
         <section className="shop-header">
           <span className="eyebrow">ABTALKS REWARD SHOP</span>
 
@@ -127,16 +108,12 @@ function RewardShop() {
 
         <section className="reward-grid">
           {rewards.map((reward) => {
-            const unlocked =
-              user.unlockedRewards?.includes(reward.id);
-
+            const unlocked = user.unlockedRewards?.includes(reward.id);
             const canAfford = user.coins >= reward.cost;
 
             return (
               <div
-                className={`shop-reward-card ${
-                  unlocked ? "unlocked" : ""
-                }`}
+                className={`shop-reward-card ${unlocked ? "unlocked" : ""}`}
                 key={reward.id}
               >
                 <div className="shop-reward-icon">
@@ -160,7 +137,7 @@ function RewardShop() {
                         ? "reward-disabled"
                         : ""
                     }`}
-                    onClick={() => buyReward(reward)}
+                    onClick={() => handleBuy(reward)}
                     disabled={unlocked || !canAfford}
                   >
                     {unlocked

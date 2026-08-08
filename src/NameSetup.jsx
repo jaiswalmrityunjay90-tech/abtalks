@@ -1,27 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "./context/UserContext";
 
 function NameSetup() {
-  const [name, setName] = useState("");
+  const { user, updateName } = useUser();
+  const [nameInput, setNameInput] = useState(user.name !== "Student" ? user.name : "");
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedName = localStorage.getItem("abtalks_user_name");
-
-    if (savedName) {
+    if (savedName && savedName !== "Student") {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
   const handleContinue = () => {
-    const cleanName = name.trim();
-
+    const cleanName = nameInput.trim();
     if (!cleanName) {
       alert("Please enter your name");
       return;
     }
 
-    localStorage.setItem("abtalks_user_name", cleanName);
+    updateName(cleanName);
     navigate("/dashboard");
   };
 
@@ -44,8 +44,8 @@ function NameSetup() {
         <input
           type="text"
           placeholder="Enter your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={nameInput}
+          onChange={(e) => setNameInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               handleContinue();
